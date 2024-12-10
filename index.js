@@ -12,7 +12,16 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
+// Create user schema
+const userSchema = new mongoose.Schema({ 
+  username: { 
+    type: String, 
+    required: true 
+  }
+}); 
 
+// Create user model
+const User = mongoose.model('User', userSchema);
 
 
 
