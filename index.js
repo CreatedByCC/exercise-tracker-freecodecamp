@@ -14,15 +14,22 @@ app.get('/', (req, res) => {
 
 // Create user schema
 const userSchema = new mongoose.Schema({ 
-  username: { 
-    type: String, 
-    required: true 
-  }
+  username: String
 }); 
 
 // Create user model
 const User = mongoose.model('User', userSchema);
 
+// Create exercise schema
+const exerciseSchema = new mongoose.Schema({ 
+  username: String,
+  description: String,
+  duration: Number,
+  date: Date
+}); 
+
+// Create exercise model
+const Exercise = mongoose.model('Exercise', exerciseSchema);
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
