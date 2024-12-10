@@ -31,6 +31,18 @@ const exerciseSchema = new mongoose.Schema({
 // Create exercise model
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
+// Create user
+app.post("/api/users", (req, res) => {
+  const username = req.body.username;
+
+  if (username) {
+    const newUser = new User({ username });
+    newUser.save();
+    res.json({ username:newUser.username, _id: newUser._id });
+  } else {
+    res.json({ error: "Unable to create new user" });
+  }
+});
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
