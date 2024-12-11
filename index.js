@@ -44,6 +44,47 @@ app.post("/api/users", (req, res) => {
   }
 });
 
+// Get all the users
+app.get("/api/users", (req, res) => {
+  const usersArray = User.find({}, "username _id");
+  
+  if(usersArray.length > 0) {
+    res.json(usersArray);
+  } else {
+    res.json({ error: "Unable to fetch all users" });
+  }
+});
+
+// Add exercise to a user with given id
+app.post("/api/users/:_id/exercises", (req, res) => {
+  const {description, duration, date} = req.body;
+  const id = req.params._id;
+  const exerciseDate= date ? new Date(date) : new Date();
+
+  const findUser = User.findById(id);
+
+  if (!findUser) {
+    res.json({ error: "User not found" });
+  }
+
+  const newExercise = new Exercise({ userId: _id, description, duration, date: exerciseDate });
+  newExercise.save();
+
+  if(newExercise) {
+    res.json( {
+      username: findUser.username,
+      description: newExercise.description,
+      duration: newExercise.duration,
+      date: newExercise.date.toDateString(),
+      _id: findUser.id
+    });
+  } else {
+    res.json({ error: "Unable to add exercise" })
+  }
+});
+
+
+
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
 })
