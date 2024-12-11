@@ -3,8 +3,15 @@ const app = express()
 const cors = require('cors')
 require('dotenv').config()
 const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
 
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB connected')) 
+  .catch(err => console.error('MongoDB connection error:', err));
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json()); 
+  
 
 app.use(cors())
 app.use(express.static('public'))
@@ -32,54 +39,88 @@ const exerciseSchema = new mongoose.Schema({
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
 // Create user
-app.post("/api/users", (req, res) => {
-  const username = req.body.username;
+app.post("/api/users", async (req, res) => {
+  const {username} = req.body;
 
-  if (username) {
+  try {
     const newUser = new User({ username });
-    newUser.save();
+    await newUser.save();
     res.json({ username:newUser.username, _id: newUser._id });
-  } else {
+  } catch (error) {
     res.json({ error: "Unable to create new user" });
   }
 });
 
 // Get all the users
-app.get("/api/users", (req, res) => {
-  const usersArray = User.find({}, "username _id");
-  
-  if(usersArray.length > 0) {
+app.get("/api/users", async (req, res) => {
+  try {
+    const usersArray = await User.find({}, "username _id");
     res.json(usersArray);
-  } else {
+  } catch (error) {
     res.json({ error: "Unable to fetch all users" });
   }
 });
 
 // Add exercise to a user with given id
-app.post("/api/users/:_id/exercises", (req, res) => {
+app.post("/api/users/:_id/exercises", async (req, res) => {
   const {description, duration, date} = req.body;
-  const id = req.params._id;
-  const exerciseDate= date ? new Date(date) : new Date();
+  const userId = req.params._id;
+  const exerciseDate = date ? new Date(date) : new Date();
 
-  const findUser = User.findById(id);
+  try {
+    const user = await User.findById(userId);
 
-  if (!findUser) {
-    res.json({ error: "User not found" });
-  }
+    if(!user) {
+      res.json({ error: "User not found" });
+    }
 
-  const newExercise = new Exercise({ userId: _id, description, duration, date: exerciseDate });
-  newExercise.save();
+    const newExercise = new Exercise({ 
+      userId, 
+      description, 
+      duration, 
+      date: exerciseDate 
+    });
+    await newExercise.save();
 
-  if(newExercise) {
     res.json( {
-      username: findUser.username,
+      username: user.username,
       description: newExercise.description,
       duration: newExercise.duration,
       date: newExercise.date.toDateString(),
-      _id: findUser.id
+      _id: user._id
     });
-  } else {
-    res.json({ error: "Unable to add exercise" })
+  } catch (error) {
+    res.json({ error: "Unable to add exercise to user id" });
+  }
+});
+
+// Get full exercise log of a user
+app.get("/api/users/:_id/logs", async (req, res) => {
+  const userId = req.params._id;
+
+  try {
+    const user = await User.findById(userId);
+
+    if(!user) {
+      res.json({ error: "User not found" });
+    }
+
+    const userExercises = await Exercise.find({ userId: userId });
+
+    const logEntries = userExercises.map(exercise => ({
+      description: exercise.description,
+      duration: exercise.duration,
+      date: exercise.date.toDateString()
+    }));
+
+    res.json({
+      username: user.username,
+      _id: user._id,
+      count: userExercises.length,
+      log: logEntries
+    })
+  } catch (error) {
+    res.json({ error: "Unable to fetch users exercise logs" });
   }
 });
 
