@@ -32,7 +32,11 @@ const exerciseSchema = new mongoose.Schema({
   username: String,
   description: String,
   duration: Number,
-  date: Date
+  date: Date,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User'
+  }
 }); 
 
 // Create exercise model
@@ -112,6 +116,9 @@ app.get("/api/users/:_id/logs", async (req, res) => {
       duration: exercise.duration,
       date: exercise.date.toDateString()
     }));
+    
+    const logLength = userExercises.length;
+    console.log(logLength);
 
     res.json({
       username: user.username,
