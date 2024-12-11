@@ -101,6 +101,8 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
 // Get full exercise log of a user
 app.get("/api/users/:_id/logs", async (req, res) => {
   const userId = req.params._id;
+  const { from, to, limit } = req.query;
+
 
   try {
     const user = await User.findById(userId);
@@ -109,7 +111,20 @@ app.get("/api/users/:_id/logs", async (req, res) => {
       res.json({ error: "User not found" });
     }
 
-    const userExercises = await Exercise.find({ userId: userId });
+    // Optional date filtering
+    let query = { userId: userId };
+    if (from || to) {
+      query.date = {};
+      if (from) query.date.$gte = new Date(from);
+      if (to) query.date.$lte = new Date(to);
+    } 
+
+    let userExercises = Exercise.find(query);
+    if (limit) {
+      userExercises = userExercises.limit(parseInt(limit));
+    }
+    userExercises = await userExercises.exec();
+
 
     const logEntries = userExercises.map(exercise => ({
       description: exercise.description,
